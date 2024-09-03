@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observability and Monitoring Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #0073e6;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #0073e6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .button:hover {
+            background-color: #005bb5;
+        }
+
+        .message {
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Observability and Monitoring Platform</h1>
+    </header>
+    <div class="container">
+        <p>Welcome to the Observability and Monitoring Platform. Click the button below to create your own observability stack.</p>
+        <div id="input-form">
+            <div class="input-group">
+                <label for="namespace">Namespace:</label>
+                <input type="text" id="namespace" name="namespace" required>
+            </div>
+            <div class="input-group">
+                <label for="memory">Memory (e.g., 1Gi):</label>
+                <input type="text" id="memory" name="memory" required>
+            </div>
+            <div class="input-group">
+                <label for="cpu">CPU (e.g., 1):</label>
+                <input type="text" id="cpu" name="cpu" required>
+            </div>
+            <button class="button" onclick="createStack()">Create Your Observability Stack</button>
+        </div>
+        <div id="status-message" class="message hidden"></div>
+        <div id="ingress-link" class="message hidden"></div>
+    </div>
+
+    <script>
+        function createStack() {
+            var namespace = document.getElementById('namespace').value;
+            var memory = document.getElementById('memory').value;
+            var cpu = document.getElementById('cpu').value;
+
+            if (namespace && memory && cpu) {
+                document.getElementById('status-message').textContent = 'Creating your stack, stay on this page, do not refresh the browser...';
+                document.getElementById('status-message').classList.remove('hidden');
+
+                // Send the data to the server (Python script)
+                fetch('/create_stack', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ namespace: namespace, memory: memory, cpu: cpu })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        var linkHTML = `Your stack has been created! Access it using the following URLs:<br>
+                                        <a href="http://${data.prometheus_ingress}" target="_blank">${data.prometheus_ingress}</a><br>
+                                        <a href="http://${data.grafana_ingress}" target="_blank">${data.grafana_ingress}</a>`;
+                        document.getElementById('ingress-link').innerHTML = linkHTML;
+                        document.getElementById('ingress-link').classList.remove('hidden');
+                    } else {
+                        document.getElementById('status-message').textContent = 'Failed to create stack: ' + data.error;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('status-message').textContent = 'An error occurred: ' + error.message;
+                });
+            } else {
+                alert('Please fill in all fields.');
+            }
+        }
+    </script>
+</body>
+</html>
